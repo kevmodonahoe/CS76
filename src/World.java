@@ -31,12 +31,11 @@ class World extends JPanel {
         this.armLength = 100;
         generateAngles(angles);
         this.joints = generateJoints(baseX, baseY, angles);
-
         generateWalls(walls);
-        generateRobot(joints);
 
     }
 
+    // Generates the walls that act as obsticals for the robot.
     public void generateWalls(ArrayList<Rectangle> walls) {
         Rectangle wall1 = new Rectangle(200, 150, 100, 100);
         Rectangle wall2 = new Rectangle(400, 150, 100, 100);
@@ -48,6 +47,7 @@ class World extends JPanel {
         walls.add(wall4);
     }
 
+    // Generates the initial angles to be used for the starting robot position.
     public void generateAngles(ArrayList<Integer> angles) {
         angles.add(320);
         angles.add(340);
@@ -62,25 +62,12 @@ class World extends JPanel {
         int thirdAngle = angles.get(2);
 
         Double x1_double = baseX + (armLength* Math.cos(Math.toRadians(firstAngle)));
-        int x1 = x1_double.intValue();
-
         Double y1_double = baseY + (armLength * Math.sin(Math.toRadians(firstAngle)));
-        int y1 = y1_double.intValue();
+        Double x2_double = x1_double + (armLength * Math.cos(Math.toRadians(firstAngle + secondAngle)));
+        Double y2_double = y1_double + (armLength * Math.sin(Math.toRadians(firstAngle + secondAngle)));
+        Double x3_double = x2_double + (armLength * Math.cos(Math.toRadians(firstAngle + secondAngle + thirdAngle)));
+        Double y3_double = y2_double + (armLength * Math.sin(Math.toRadians(firstAngle + secondAngle + thirdAngle)));
 
-
-        Double x2_double = x1 + (armLength * Math.cos(Math.toRadians(firstAngle + secondAngle)));
-        int x2 = x2_double.intValue();
-
-        Double y2_double = y1 + (armLength * Math.sin(Math.toRadians(firstAngle + secondAngle)));
-        int y2 = y2_double.intValue();
-
-        Double x3_double = x2 + (armLength * Math.cos(Math.toRadians(firstAngle + secondAngle + thirdAngle)));
-        int x3 = x3_double.intValue();
-
-        Double y3_double = y2 + (armLength * Math.sin(Math.toRadians(firstAngle + secondAngle + thirdAngle)));
-        int y3 = y3_double.intValue();
-
-        // DO I NEED TO ADD THE INITIAL POINT TO THE JOINTS?
         Point2D.Double initialPoint = new Point2D.Double(baseX, baseY);
         Point2D.Double p1 = new Point2D.Double(x1_double, y1_double);
         Point2D.Double p2 = new Point2D.Double(x2_double, y2_double);
@@ -93,49 +80,6 @@ class World extends JPanel {
         return joints;
     }
 
-    public void generateRobot(ArrayList<Point2D.Double> joints) {
-        int width = 100;
-        int height = 1;
-        ArrayList<Integer> angles = new ArrayList<>();
-        angles.add(20);
-        angles.add(340);
-        angles.add(280);
-
-//        for (int i=0; i<joints.size(); i++) {
-//            arms.add(new RobotArm(width, height, angles.get(i), joints.get(i)));
-//        }
-
-//
-//        int firstAngle = 0;
-//
-//        Point p1 = new Point(200, 550);
-//        Double p1x_double = ((p1.x + width) * Math.cos(Math.toRadians(10)));
-//        int p1x_int = p1x_double.intValue();
-//
-//
-//        Double p2x_double = (p1x_int) + (width * Math.cos(Math.toRadians(10)));
-//        int p2x_int = p2x_double.intValue();
-//
-//
-//        Point p2 = new Point(p2x_int, p1.y);
-//
-//        // from the joints, draw connect the lines between them (create the arms!)
-//        RobotArm robotArm1 = new RobotArm(width, height, firstAngle, p1);
-//        RobotArm robotArm2 = new RobotArm(width, height, 335, p2);
-//
-////        Point p3 = new Point(p2.x + width, p2.y);
-////        RobotArm robotArm3 = new RobotArm(width, height, 235, p3);
-//
-//        arms.add(robotArm1);
-//        arms.add(robotArm2);
-//        arms.add(robotArm3);
-
-        // calls a getJoints function - the arms take in an angle, and the getJoints returns
-        // the arraylist of lines (or robot arms) that make up the robot
-
-        // then calls a function to generate the graph (successor function)
-    }
-
     public ArrayList<Rectangle> getWalls() {
         return walls;
     }
@@ -143,6 +87,8 @@ class World extends JPanel {
     public ArrayList<RobotArm> getArms() {
         return arms;
     }
+
+    public GeneralPath getRobot() { return robot; }
 
     // Actually draws the world, which includes all the walls and arms.
     private void drawWorld(Graphics g) {
@@ -152,14 +98,10 @@ class World extends JPanel {
         for(Rectangle wall : walls) {
             g2d.fill(wall);
         }
-//
-//        for(RobotArm arm : arms) {
-//            g2d.draw(arm.getArm());
-//        }
-
 
         robot.moveTo(joints.get(0).x, joints.get(0).y);
         for(int i=1; i<joints.size(); i++) {
+            System.out.println("Contains point: " + joints.get(i).x + " " + joints.get(i).y);
             robot.lineTo(joints.get(i).x, joints.get(i).y);
         }
         g2d.draw(robot);
