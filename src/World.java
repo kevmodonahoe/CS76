@@ -16,13 +16,16 @@ class World extends JPanel {
     ArrayList<Rectangle> walls;
     ArrayList<RobotArm> arms;
     ArrayList<Point2D.Double> joints;
+    ArrayList<Point> samplePoints;
     int baseX, baseY, armLength;
     GeneralPath robot;
 
     // A World is the actual area where all the arms and walls live.
     // An instance of this is instantiated inside of the RobotArmProblem.
     public World(ArrayList<Rectangle> walls, ArrayList<RobotArm> arms, GeneralPath robot) {
+        // The state of the problem is the angles
         ArrayList<Integer> angles = new ArrayList<>();
+        samplePoints = new ArrayList<>();
         this.walls = walls;
         this.arms = arms;
         this.robot = robot;
@@ -49,11 +52,14 @@ class World extends JPanel {
 
     // Generates the initial angles to be used for the starting robot position.
     public void generateAngles(ArrayList<Integer> angles) {
-        angles.add(320);
+        angles.add(0);
         angles.add(340);
         angles.add(280);
     }
 
+    // Given the angles of the links of arms, this function generates the endpoints where the joints
+    // will be represented.
+    // It returns an ArrayList containing the location of each joint.
     public ArrayList<Point2D.Double> generateJoints(int baseX, int baseY, ArrayList<Integer> angles) {
         ArrayList<Point2D.Double> joints = new ArrayList<Point2D.Double>();
 
@@ -90,6 +96,8 @@ class World extends JPanel {
 
     public GeneralPath getRobot() { return robot; }
 
+    public ArrayList<Point> getSamplePoints() { return samplePoints; }
+
     // Actually draws the world, which includes all the walls and arms.
     private void drawWorld(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
@@ -101,16 +109,26 @@ class World extends JPanel {
 
         robot.moveTo(joints.get(0).x, joints.get(0).y);
         for(int i=1; i<joints.size(); i++) {
-            System.out.println("Contains point: " + joints.get(i).x + " " + joints.get(i).y);
+            System.out.println("Joints: " + joints.get(i).x + " " + joints.get(i).y);
+            g2d.drawOval((int) joints.get(i).x, (int) joints.get(i).y, 5, 5);
             robot.lineTo(joints.get(i).x, joints.get(i).y);
         }
         g2d.draw(robot);
+    }
 
+    public void updateWorld(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
+        if(samplePoints.size() > 0) {
+            for(Point point : samplePoints) {
+                g2d.drawOval(point.x, point.y, 10, 10);
+            }
+        }
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         drawWorld(g);
+        updateWorld(g);
     }
 }
