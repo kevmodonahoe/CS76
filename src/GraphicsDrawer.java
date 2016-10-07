@@ -18,7 +18,7 @@ public class GraphicsDrawer extends JFrame {
         add(robotWorld);
 
         setTitle("Robot Graphics");
-        setSize(700, 700);
+        setSize(800, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }

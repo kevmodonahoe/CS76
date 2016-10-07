@@ -23,7 +23,7 @@ public class RobotArmProblem {
 
 
     public static void main(String[] args) {
-        World robotWorld = new World(walls, arms, robot);
+        World robotWorld = new World(walls, arms, robot, 3);
         GraphicsDrawer drawer = new GraphicsDrawer(robotWorld);
         drawer.setVisible(true);
 

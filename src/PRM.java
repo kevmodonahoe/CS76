@@ -30,6 +30,7 @@ public class PRM {
     public void performPRM() {
         samplePoints = generateSamplePoints();
         robotWorld.updateWorldWithSampleNodes(robotWorld.getGraphics());
+        robotWorld.repaint();
         localPlanner();
 
     }
@@ -41,15 +42,15 @@ public class PRM {
 
         while(samplePoints.size() < 50) {
             point = new Point();
-            point.x = rand.nextInt(600) + 1;
-            point.y = rand.nextInt(600) + 1;
+            point.x = rand.nextInt(800) - 400;
+            point.y = rand.nextInt(800) - 400;
 
             // Makes sure that there are no collisions with walls, other points, or duplicate points.
             if(wallCollision(point) || closeToOtherPoint(point)) {
                 System.out.println("Collided with wall or other point: " + point.x  + ", " + point.y);
                 continue;
             }
-            System.out.println("Didn't collide: " + point.x + ", " + point.y);
+//            System.out.println("Didn't collide: " + point.x + ", " + point.y);
             samplePoints.add(point);
         }
 
@@ -88,20 +89,22 @@ public class PRM {
             // a node contains the point, and all its neighbors
         HashMap<Integer, PRMNode> graph = new HashMap();
 
-        int size = 10;
         // first get the k-neighbors of each of the initial joints
         for(Point2D.Double joint : joints) {
             ArrayList<Point> neighbors = findKNeighbors(joint);
-            robotWorld.updateWorldWithKNeighbors(robotWorld.getGraphics(), joint, neighbors, size);
-            size+=5;
+            robotWorld.updateWorldWithKNeighbors(robotWorld.getGraphics(), joint, neighbors);
         }
 
         /// then get the k-neighbors of each of the sample points
-        for(Point point : samplePoints) {
-            Point2D.Double converted = new Point2D.Double(point.x, point.y);
-            ArrayList<Point> neighbors = findKNeighbors(converted);
-            robotWorld.updateWorldWithKNeighbors(robotWorld.getGraphics(), converted, neighbors, size);
-        }
+//        for(Point point : samplePoints) {
+//            Point2D.Double converted = new Point2D.Double(point.x, point.y);
+//            ArrayList<Point> neighbors = findKNeighbors(converted);
+//            robotWorld.updateWorldWithKNeighbors(robotWorld.getGraphics(), converted, neighbors);
+//        }
+    }
+
+    public void queryGraph() {
+//        robotWorld.robot.
     }
 
     // Given a vertex, finds tke k-closest neighboring vertices, and returns those k-neighbors
@@ -125,7 +128,11 @@ public class PRM {
         Iterator it = neighborSet.iterator();
 
         while(it.hasNext()) {
-            if(k == 4) {
+//            if(k == 0) {
+//                k++;
+//                continue;
+//            }
+            if(k == 2) {
                 break;
             }
             Map.Entry me = (Map.Entry) it.next();
@@ -142,10 +149,16 @@ public class PRM {
     // Checks to make sure that a link connecting two points don't collide with a wall.
     public boolean linkCollidesWithWall(Point2D.Double joint, Point point) {
         for(Rectangle wall : walls) {
-            if(wall.intersectsLine(joint.x, joint.y, point.x, point.y)) {
-                return true;
-            }
+//            if(wall.intersectsLine(joint.x, joint.y, point.x, point.y)) {
+//                // it is being caught, but still drawing the lines...?
+//                System.out.println("Link Collided: " + point.x + ", " + point.y + " and " + joint.x +  ", " + joint.y);
+//                robotWorld.getGraphics().drawOval(point.x, point.y, 5, 5);
+//                robotWorld.getGraphics().drawOval((int) joint.x, (int) joint.y, 7, 7);
+//
+//                return true;
+//            }
         }
+        System.out.println("Didn't intersect!");
         return false;
     }
 
