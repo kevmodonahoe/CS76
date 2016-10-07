@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import static java.awt.BasicStroke.CAP_ROUND;
+
 /**
  * Created by kdonahoe on 10/2/16.
  */
@@ -110,25 +112,36 @@ class World extends JPanel {
         robot.moveTo(joints.get(0).x, joints.get(0).y);
         for(int i=1; i<joints.size(); i++) {
             System.out.println("Joints: " + joints.get(i).x + " " + joints.get(i).y);
-            g2d.drawOval((int) joints.get(i).x, (int) joints.get(i).y, 5, 5);
+            g2d.drawOval((int) joints.get(i).x, (int) joints.get(i).y, 10, 10);
             robot.lineTo(joints.get(i).x, joints.get(i).y);
+        }
+
+        g2d.draw(robot);
+    }
+
+    public void updateWorldWithSampleNodes(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
+        if(samplePoints.size() > 0) {
+            for(Point point : samplePoints) {
+                g2d.drawOval(point.x, point.y, 5, 5);
+            }
+        }
+    }
+
+    public void updateWorldWithKNeighbors(Graphics g, Point2D.Double joint, ArrayList<Point> neighbors, int size) {
+        Graphics2D g2d = (Graphics2D) g;
+        for(Point point : neighbors) {
+            robot.moveTo(joint.x, joint.y);
+            robot.lineTo(point.x, point.y);
         }
         g2d.draw(robot);
     }
 
-    public void updateWorld(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
-        if(samplePoints.size() > 0) {
-            for(Point point : samplePoints) {
-                g2d.drawOval(point.x, point.y, 10, 10);
-            }
-        }
-    }
+
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         drawWorld(g);
-        updateWorld(g);
     }
 }
