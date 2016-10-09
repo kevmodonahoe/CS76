@@ -9,7 +9,6 @@ import java.awt.Rectangle;
 import java.util.*;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
-import java.awt.Point;
 
 public class PRM {
     ArrayList<Rectangle> walls;
@@ -28,18 +27,16 @@ public class PRM {
         this.walls = robotWorld.getWalls();
         this.joints = robotWorld.joints;
         this.goalJoints = robotWorld.goalJoints;
-        this.samplePoints = robotWorld.getSamplePoints();
+        this.samplePoints = new ArrayList<>();
 
     }
 
     public void performPRM() {
         samplePoints = generateSamplePoints();
-        robotWorld.updateWorldWithSampleNodes(robotWorld.getGraphics());
+        robotWorld.updateWorldWithSampleNodes(robotWorld.getGraphics(), samplePoints);
         localPlanner();
         robot.closePath();
-        robotWorld.drawRobot(robotWorld.getGraphics());
         queryGraph();
-
     }
 
     // sampling method
@@ -47,17 +44,15 @@ public class PRM {
         Random rand = new Random();
         Point2D.Double point;
 
-        while(samplePoints.size() < 50) {
+        while(samplePoints.size() < 500) {
             point = new Point2D.Double();
-            point.x = rand.nextInt(800) - 0;
-            point.y = rand.nextInt(800) - 0;
+            point.x = rand.nextInt(750) - 0;
+            point.y = rand.nextInt(750) - 0;
 
             // Makes sure that there are no collisions with walls, other points, or duplicate points.
             if(wallCollision(point) || closeToOtherPoint(point)) {
-//                System.out.println("Collided with wall or other point: " + point.x  + ", " + point.y);
                 continue;
             }
-//            System.out.println("Didn't collide: " + point.x + ", " + point.y);
             samplePoints.add(point);
         }
 
@@ -126,9 +121,8 @@ public class PRM {
     }
 
     public void queryGraph() {
-        Point2D.Double startNode = new Point2D.Double();
+        Point2D.Double startNode;
         startNode = robotWorld.joints.get(3);
-        System.out.println("goal: " + robotWorld.goalJoints);
         ArrayList<Point2D.Double> finalPath = breadthFirstSearch(startNode);
         if(finalPath != null) {
             System.out.println("Fond the Goal!");
@@ -137,100 +131,10 @@ public class PRM {
             System.out.println("Didn't find a goal path");
         }
     }
-//
-//    public List<Point2D.Double> aStar() {
-//        List<State> finalPath = new ArrayList<State>();
-//        Comparator<State> comparator = new CostComparator();
-//        PriorityQueue<State> pqueue = new PriorityQueue<State>(comparator);
-//
-//        // processed --> keeps track of hashCode of Node -> node
-//        // processed is actually processed it (checked if goal or gotten it's children)
-//        // only processes nodes that have been popped off of the pqueue
-//        HashMap<Integer, State> processed = new HashMap();
-//        HashMap<Integer, State> seen = new HashMap();
-//
-//        //parentMap --> maps a node to its parent
-//        HashMap<State, State> parentMap = new HashMap();
-//        double[] config = robotWorld.startConfigWithCoords;
-//
-//        State startConfig = new State(config[0], config[1], config[2], config[3], config[4], config[5], config[6], config[7]);
-//
-//        parentMap.put(startConfig, startConfig);
-//        startConfig.distance = 0;
-//        startConfig.heuristic = heuristic(startConfig);
-//        pqueue.add(startConfig);
-//
-//        seen.put(startConfig.hashCode(), startConfig);
-//
-//
-//        while (!pqueue.isEmpty()) {
-//            // Be sure to keep track of the nodes you have explored, because when adding nodes
-//            // to the priority queue,
-//            State currNode = pqueue.poll();
-//
-//            System.out.println();
-//            System.out.println("Exploring in A*: " + currNode.toString());
-//
-//            // if the node has already been processed, do not process it again
-//            if(processed.containsKey(currNode.hashCode())) {
-//                System.out.println("Already processed " + currNode.toString());
-//                continue;
-//            } else {
-//                if(goalTest(currNode)) {
-//                    addRobot(currNode);
-//                    finalPath = backchain(currNode, parentMap);
-//                    return finalPath;
-//                }
-//                addRobot(currNode);
-//                try {
-//
-//                    //sleep 5 seconds
-//                    Thread.sleep(100);
-//
-//
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//
-//
-//                ArrayList<State> neighbors = getNeighbors(currNode);
-//
-//                for(State neighbor : neighbors) {
-//                    neighbor.depth = currNode.depth + 1;
-//
-//                    if(!processed.containsKey(neighbor.hashCode()) && !pqueue.contains(neighbor)) {
-//                        neighbor.heuristic = heuristic(neighbor);
-//                        pqueue.add(neighbor);
-//                        parentMap.put(neighbor, currNode);
-//                    } else {
-//                        if(!processed.containsKey(neighbor.hashCode()) && pqueue.contains(neighbor) ) {
-//                            State existingNode = seen.get(neighbor.hashCode());
-//                            // the new node already is in the queue, but has a shorter path than the existing node,
-//                            // add it to the queue
-//                            if(heuristic(existingNode) > heuristic(neighbor)) {
-//                                neighbor.heuristic = this.heuristic(neighbor);
-//                                pqueue.add(neighbor);
-//                                parentMap.put(neighbor, currNode);
-//                            } else {
-//                                System.out.println("Node was already in explored/pqueue, but not shorter depth: " + neighbor);
-//                            }
-//                        }
-//                    }
-//                    seen.put(neighbor.hashCode(), neighbor);
-//                }
-//            }
-//            processed.put(currNode.hashCode(), currNode);
-//            removeRobot(currNode);
-//        }
-//
-//        return finalPath;
-//    }
-//
-//
+
+
     public ArrayList<Point2D.Double> breadthFirstSearch(Point2D.Double startNode) {
         Queue<Point2D.Double> queue = new LinkedList();
-
-        int count = 0;
 
         queue.add(startNode);
         HashMap<Point2D.Double, Point2D.Double> visited = new HashMap();
@@ -238,7 +142,6 @@ public class PRM {
         while (!queue.isEmpty()) {
 
             Point2D.Double currNode = queue.poll();
-            count++;
             if (goalTest(currNode)) {
                 ArrayList<Point2D.Double> finalPath = backchain(currNode, visited);
                 System.out.println(finalPath);
@@ -246,8 +149,6 @@ public class PRM {
             }
 
             ArrayList<Point2D.Double> neighbors = graph.get(currNode);
-            System.out.println("getting neighbors of " + currNode);
-//            System.out.println(neighbors);
             if(neighbors == null) {
                 continue;
             }
@@ -258,7 +159,6 @@ public class PRM {
                 }
             }
         }
-        System.out.println(count);
         return null;
     }
 
@@ -310,7 +210,7 @@ public class PRM {
         Iterator it = neighborSet.iterator();
 
         while(it.hasNext()) {
-            if(k == 3) {
+            if(k == 5) {
                 break;
             }
             Map.Entry me = (Map.Entry) it.next();
@@ -329,12 +229,9 @@ public class PRM {
     public boolean linkCollidesWithWall(Point2D.Double joint, Point2D.Double point) {
         for(Rectangle wall : walls) {
             if(wall.intersectsLine(joint.x, joint.y, point.x, point.y)) {
-                // it is being caught, but still drawing the lines...? - only when you translate the origin
-//                System.out.println("Link Collided: " + point.x + ", " + point.y + " and " + joint.x +  ", " + joint.y);
                 return true;
             }
         }
-//        System.out.println("Didn't intersect!");
         return false;
     }
 

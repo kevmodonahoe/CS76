@@ -31,7 +31,7 @@ public class RobotArmProblem {
         // Need to sleep first so that all the variables of robotWorld are set before the rest of the main runs.
         // Otherwise, the robot would have no points/paths.
         try {
-            Thread.sleep(10);
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -42,10 +42,7 @@ public class RobotArmProblem {
 
         for(Rectangle wall : walls) {
             if (robot.intersects(wall)) {
-                System.out.println("Intersects!!");
                 robotWorld.setBackground(Color.red);
-            } else {
-                System.out.println("Doesn't intersect...");
             }
         }
 

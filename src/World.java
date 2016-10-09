@@ -19,34 +19,27 @@ class World extends JPanel {
     ArrayList<RobotArm> arms;
     ArrayList<Point2D.Double> joints;
     ArrayList<Point2D.Double> goalJoints;
-    ArrayList<Point2D.Double> samplePoints;
-    double[] startConfigWithCoords;
 
     int[] startConfig;
     int[] goalConfig;
-    int baseX, baseY, armLength;
+    int armLength;
     GeneralPath robot;
     GeneralPath goalPath;
-    boolean beenDrawn = false;
 
     // A World is the actual area where all the arms and walls live.
     // An instance of this is instantiated inside of the RobotArmProblem.
     public World(ArrayList<Rectangle> walls, ArrayList<RobotArm> arms, GeneralPath robot, int numJoints) {
         // The state of the problem is the angles
-        samplePoints = new ArrayList<>();
         goalPath = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 100);
         this.walls = walls;
         this.arms = arms;
         this.robot = robot;
-        this.baseX = 200;
-        this.baseY = 700;
         this.armLength = 90;
+
         ArrayList<Integer> startAngles = generateStartAngles();
         ArrayList<Integer> goalAngles = generateGoalAngles();
         this.startConfig = generateStartConfig(numJoints, startAngles);
         this.goalConfig = generateGoalConfig(numJoints, goalAngles);
-
-        this.startConfigWithCoords = generateStartConfigCoords();
 
         this.joints = generateJoints(startConfig[0], startConfig[1], startAngles);
         this.goalJoints = generateJoints(goalConfig[0], goalConfig[1], goalAngles);
@@ -57,8 +50,8 @@ class World extends JPanel {
     // Generates the walls that act as obsticals for the robot.
     public void generateWalls(ArrayList<Rectangle> walls) {
         Rectangle wall1 = new Rectangle(200, 200, 100, 100);
-        Rectangle wall2 = new Rectangle(200, 500, 100, 100);
-        Rectangle wall3 = new Rectangle(500, 200, 100, 100);
+        Rectangle wall2 = new Rectangle(500, 200, 100, 100);
+        Rectangle wall3 = new Rectangle(200, 500, 100, 100);
         Rectangle wall4 = new Rectangle(500, 500, 100, 100);
         walls.add(wall1);
         walls.add(wall2);
@@ -91,23 +84,10 @@ class World extends JPanel {
         int[] startConfig = new int[numJoints + 2];
         startConfig[0] = 400;
         startConfig[1] = 400;
-        for(int i=0; i<numJoints; i++) {
+        for (int i = 0; i < numJoints; i++) {
             startConfig[i + 2] = angles.get(i);
         }
 
-        return startConfig;
-    }
-
-    public double[] generateStartConfigCoords() {
-        double[] startConfig = new double[8];
-        startConfig[0] = 400.0;
-        startConfig[1] = 400.0;
-        startConfig[2] = 600.0;
-        startConfig[3] = 700.0;
-        startConfig[4] = 700.0;
-        startConfig[5] = 700.0;
-        startConfig[6] = 700.0;
-        startConfig[7] = 600.0;
         return startConfig;
     }
 
@@ -170,8 +150,6 @@ class World extends JPanel {
 
     public GeneralPath getRobot() { return robot; }
 
-    public ArrayList<Point2D.Double> getSamplePoints() { return samplePoints; }
-
     // Actually draws the world, which includes all the walls and arms.
     private void drawWorld(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
@@ -207,7 +185,7 @@ class World extends JPanel {
 
     }
 
-    public void updateWorldWithSampleNodes(Graphics g) {
+    public void updateWorldWithSampleNodes(Graphics g, ArrayList<Point2D.Double> samplePoints) {
         Graphics2D g2d = (Graphics2D) g;
         if(samplePoints.size() > 0) {
             for(Point2D.Double point : samplePoints) {
@@ -223,7 +201,6 @@ class World extends JPanel {
             robot.lineTo(point.x, point.y);
         }
         g2d.draw(robot);
-//        repaint();
     }
 
     public void updateWorldFinalPath(ArrayList<Point2D.Double> finalPath, Graphics g) {
@@ -236,22 +213,10 @@ class World extends JPanel {
         g2d.draw(goalPath);
     }
 
-    public void drawRobot(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
-        GeneralPath startRobot = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 100);
-        GeneralPath goalRobot = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 100);
-
-
-
-    }
-
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-//        g.translate(400, 400);
-//        g.drawLine(0, -400, 0, 400);
-//        g.drawLine(-400, 0, 400, 0);
         drawWorld(g);
     }
 }
