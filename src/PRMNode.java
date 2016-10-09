@@ -2,6 +2,7 @@
  * Created by kdonahoe on 10/5/16.
  */
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.awt.Point;
 
@@ -10,12 +11,12 @@ import java.awt.Point;
 
 public class PRMNode {
     ArrayList<PRMNode> adjacencyNodes;
-    Point p;
+    Point2D.Double p;
     int index;
 
     public PRMNode() {
         adjacencyNodes = new ArrayList<>();
-        p = new Point();
+        p = new Point2D.Double();
     }
 
     public ArrayList<PRMNode> getAdjacencyNodes() {
@@ -26,11 +27,11 @@ public class PRMNode {
         this.adjacencyNodes = adjacencyNodes;
     }
 
-    public Point getP() {
+    public Point2D.Double getP() {
         return p;
     }
 
-    public void setP(Point p) {
+    public void setP(Point2D.Double p) {
         this.p = p;
     }
 

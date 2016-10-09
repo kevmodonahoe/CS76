@@ -11,6 +11,7 @@ public class RobotArmProblem {
     static ArrayList<RobotArm> arms = new ArrayList<RobotArm>();
     static GeneralPath robot = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 100);
 
+
     public RobotArmProblem(ArrayList<Rectangle> obsticles, ArrayList<RobotArm> robotArms) {
         this.walls = obsticles;
         this.arms = robotArms;
