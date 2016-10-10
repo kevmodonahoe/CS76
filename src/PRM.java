@@ -4,73 +4,83 @@
 
 import com.sun.corba.se.impl.orbutil.graph.Graph;
 import org.w3c.dom.css.Rect;
-
+import java.awt.*;
 import java.awt.Rectangle;
 import java.util.*;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
+import javafx.scene.shape.Circle;
+
 
 public class PRM {
-    ArrayList<Rectangle> walls;
+    ArrayList<Rectangle> rectWalls;
+    ArrayList<Circle> circularWalls;
     ArrayList<Point2D.Double> samplePoints;
     ArrayList<Point2D.Double> joints;
     ArrayList<Point2D.Double> goalJoints;
+    ArrayList<Integer> angles;
+    Point2D.Double basePoint;
+
     GeneralPath robot;
     World robotWorld;
-    HashMap<Point2D.Double, ArrayList<Point2D.Double>> graph;
-
+    HashMap<State, ArrayList<State>> graph;
 
     public PRM(World robotWorld) {
         graph = new HashMap<>();
+        this.basePoint = new Point2D.Double(400, 400);
         this.robotWorld = robotWorld;
         this.robot = robotWorld.getRobot();
-        this.walls = robotWorld.getWalls();
+        this.rectWalls = robotWorld.getRectWalls();
         this.joints = robotWorld.joints;
         this.goalJoints = robotWorld.goalJoints;
         this.samplePoints = new ArrayList<>();
-
     }
 
     public void performPRM() {
-        samplePoints = generateSamplePoints();
-        robotWorld.updateWorldWithSampleNodes(robotWorld.getGraphics(), samplePoints);
-        localPlanner();
-        robot.closePath();
+        ArrayList<State> randomSamples = generateSampleAngles();
+        localPlanner(randomSamples);
         queryGraph();
     }
 
-    // sampling method
-    public ArrayList<Point2D.Double> generateSamplePoints() {
+    public ArrayList<State> generateSampleAngles() {
+        ArrayList<State> samples = new ArrayList<>();
         Random rand = new Random();
-        Point2D.Double point;
 
-        while(samplePoints.size() < 500) {
-            point = new Point2D.Double();
-            point.x = rand.nextInt(750) - 0;
-            point.y = rand.nextInt(750) - 0;
+        while(samples.size() < 2500) {
+            State sample = new State();
+            int angle1 = rand.nextInt(360) - 0;
+            int angle2 = rand.nextInt(360) - 0;
+            int angle3 = rand.nextInt(360) - 0;
 
-            // Makes sure that there are no collisions with walls, other points, or duplicate points.
-            if(wallCollision(point) || closeToOtherPoint(point)) {
+            sample.angles.add(angle1);
+            sample.angles.add(angle2);
+            sample.angles.add(angle3);
+
+            ArrayList<Point2D.Double> points = robotWorld.generateJoints(basePoint, sample.angles);
+            boolean collided = false;
+            // checks to make sure the arm connecting this new set of angles wouldn't collide with a wall
+            for(int i=0; i<points.size() - 1; i++) {
+                if(i == 0) {
+                    if(linkCollidesWithWall(basePoint, points.get(i))) {
+                        collided = true;
+                    }
+                } else {
+                    if(linkCollidesWithWall(points.get(i), points.get(i + 1))) {
+                        collided = true;
+                    }
+                }
+            }
+            if(collided) {
                 continue;
             }
-            samplePoints.add(point);
+            samples.add(sample);
         }
-
-        return samplePoints;
-    }
-
-    public boolean closeToOtherPoint(Point2D.Double point) {
-        for(Point2D.Double existingPoint : samplePoints) {
-            if ((Math.abs(point.x - existingPoint.x) < 3) && (Math.abs(point.y - existingPoint.y) < 3)) {
-                return true;
-            }
-        }
-        return false;
+        return samples;
     }
 
     // Collision detection method that checks if the point collides with a wall.
     public boolean wallCollision(Point2D.Double point) {
-        ArrayList<Rectangle> walls = robotWorld.getWalls();
+        ArrayList<Rectangle> walls = robotWorld.getRectWalls();
         for(Rectangle wall : walls) {
             // Add/subtract 10 to include a bit of a buffer to the edges of the walls to make up for the width of the points.
             if((point.x > wall.getX() - 10 && point.x <= (wall.getX() + wall.getWidth() + 10)) &&
@@ -81,81 +91,61 @@ public class PRM {
         return false;
     }
 
-    // local planner:
-    // find their k nearest neighbors
-        // for each neighbor
-            // see if a link connecting the node with that neighbor would be a collision
-                // if not, create a link
-    public void localPlanner() {
 
-        samplePoints.addAll(joints);
-        samplePoints.addAll(goalJoints);
+    public void localPlanner(ArrayList<State> randomSamples) {
+        randomSamples.add(robotWorld.startingConfig);
+        randomSamples.add(robotWorld.goalConfig);
 
-        // graph that maps vertex index to the node itself
-            // a node contains the point, and all its neighbors
-        // first get the k-neighbors of each of the initial joints and insert those start joints into the graph
-        for(Point2D.Double joint : joints) {
-            ArrayList<Point2D.Double> neighbors = findKNeighbors(joint);
-            graph.put(joint, neighbors);
-            robotWorld.updateWorldWithKNeighbors(robotWorld.getGraphics(), joint, neighbors);
+        for(State sample : randomSamples) {
+            ArrayList<State> neighbors = findKNeighbors(sample, randomSamples);
+            graph.put(sample, neighbors);
         }
-
-        // then get the k-neighbors of each of the goal joints, and insert those goal joints into the graph
-        for(Point2D.Double joint : goalJoints) {
-            ArrayList<Point2D.Double> neighbors = findKNeighbors(joint);
-            graph.put(joint, neighbors);
-            robotWorld.updateWorldWithKNeighbors(robotWorld.getGraphics(), joint, neighbors);
-        }
-
-        // then get the k-neighbors of each of the sample points, and insert those sample points into the graph
-        for(Point2D.Double point : samplePoints) {
-            ArrayList<Point2D.Double> neighbors = findKNeighbors(point);
-            graph.put(point, neighbors);
-            robotWorld.updateWorldWithKNeighbors(robotWorld.getGraphics(), point, neighbors);
-        }
-
-        // right now, I am calculating all possible moves throughout the whole movement
-            // an alternate would be to calculate K-nearest for one joint, move that joint to one of
-            // them, and then re-calculate k-nearest and move it to one of those
-
     }
 
     public void queryGraph() {
-        Point2D.Double startNode;
-        startNode = robotWorld.joints.get(3);
-        ArrayList<Point2D.Double> finalPath = breadthFirstSearch(startNode);
+        ArrayList<State> finalPath = breadthFirstSearch(robotWorld.startingConfig);
         if(finalPath != null) {
-            System.out.println("Fond the Goal!");
-            robotWorld.updateWorldFinalPath(finalPath, robotWorld.getGraphics());
+            System.out.println("Found the goal! Number of movements: " + finalPath.size());
+            for(State config : finalPath) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                ArrayList<Point2D.Double> points = robotWorld.generateJoints(basePoint, config.angles);
+                robotWorld.updateWorldWithSampleNodes(robotWorld.getGraphics(), points);
+                robotWorld.updateWorldConnectSampleNodes(robotWorld.getGraphics(), points);
+            }
+
         } else {
-            System.out.println("Didn't find a goal path");
+            System.out.println("Didnt find the goal");
         }
     }
 
 
-    public ArrayList<Point2D.Double> breadthFirstSearch(Point2D.Double startNode) {
-        Queue<Point2D.Double> queue = new LinkedList();
+    public ArrayList<State> breadthFirstSearch(State startConfig) {
+        Queue<State> queue = new LinkedList();
 
-        queue.add(startNode);
-        HashMap<Point2D.Double, Point2D.Double> visited = new HashMap();
-        visited.put(startNode, startNode);
+        queue.add(startConfig);
+        HashMap<State, State> visited = new HashMap();
+        visited.put(startConfig, startConfig);
         while (!queue.isEmpty()) {
 
-            Point2D.Double currNode = queue.poll();
-            if (goalTest(currNode)) {
-                ArrayList<Point2D.Double> finalPath = backchain(currNode, visited);
-                System.out.println(finalPath);
+            State currConfig = queue.poll();
+            if (goalTest(currConfig)) {
+                ArrayList<State> finalPath = backchain(currConfig, visited);
                 return finalPath;
             }
 
-            ArrayList<Point2D.Double> neighbors = graph.get(currNode);
+            ArrayList<State> neighbors = graph.get(currConfig);
+
             if(neighbors == null) {
                 continue;
             }
-            for(Point2D.Double neighbor : neighbors) {
+            for(State neighbor : neighbors) {
                 if (!visited.containsKey(neighbor)) {
                     queue.add(neighbor);
-                    visited.put(neighbor, currNode);
+                    visited.put(neighbor, currConfig);
                 }
             }
         }
@@ -164,10 +154,10 @@ public class PRM {
 
 
     // backchain should only be used by bfs, not the recursive dfs
-    private ArrayList<Point2D.Double> backchain(Point2D.Double node, HashMap<Point2D.Double, Point2D.Double> visited) {
-        ArrayList<Point2D.Double> finalPath = new ArrayList<Point2D.Double>();
+    private ArrayList<State> backchain(State node, HashMap<State, State> visited) {
+        ArrayList<State> finalPath = new ArrayList<State>();
         finalPath.add(node);
-        Point2D.Double parent = visited.get(node);
+        State parent = visited.get(node);
 
         while (visited.containsKey(parent)) {
             finalPath.add(parent);
@@ -183,8 +173,9 @@ public class PRM {
         return finalPath;
     }
 
-    public boolean goalTest(Point2D.Double currNode) {
-        return (currNode.x == robotWorld.goalJoints.get(3).x && currNode.y == robotWorld.goalJoints.get(3).y);
+    // Goal test to see whether the current configuration is the goal configuration
+    public boolean goalTest(State currConfig) {
+        return (currConfig.angles == robotWorld.goalConfig.angles);
     }
 
 
@@ -193,17 +184,18 @@ public class PRM {
     // The k-closest neighbors are measured by the euclidean distance between the two vertices.
     // Additionally, a vertex is only added as a neighbor to another vertex if the link connecting
     // the two vertices does not collide with a wall.
-    public ArrayList<Point2D.Double> findKNeighbors(Point2D.Double joint) {
-        ArrayList<Point2D.Double> neighbors = new ArrayList<>();
+    public ArrayList<State> findKNeighbors(State config, ArrayList<State> samples) {
+        ArrayList<State> neighbors = new ArrayList<>();
         int k = 0;
 
         TreeMap map = new TreeMap();
 
-        for(Point2D.Double vertex : samplePoints) {
-            Double xDist = Math.abs(vertex.getX() - joint.getX());
-            Double yDist = Math.abs(vertex.getY() - joint.getY());
-            Double distance = Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
-            map.put(distance, vertex);
+        for(State sample : samples) {
+            Double difference = 0.0;
+            for(int i=0; i<sample.angles.size(); i++) {
+                difference += Math.abs(sample.angles.get(i) - config.angles.get(i));
+            }
+            map.put(difference, sample);
         }
 
         Set neighborSet = map.entrySet();
@@ -214,20 +206,24 @@ public class PRM {
                 break;
             }
             Map.Entry me = (Map.Entry) it.next();
-            Point2D.Double neighbor = (Point2D.Double) me.getValue();
-            // check to make sure the link doesn't collide with a wall, or that the link is between a node and itself
-            if(linkCollidesWithWall(joint, neighbor) || (joint.equals(neighbor))) {
+            State neighbor = (State) me.getValue();
+
+            // don't add the configuration as a neighbor if it is simply the current configuration itself
+            if((config.equals(neighbor))) {
                 continue;
             }
             neighbors.add(neighbor);
             k++;
+
         }
         return neighbors;
+
+
     }
 
     // Checks to make sure that a link connecting two points don't collide with a wall.
     public boolean linkCollidesWithWall(Point2D.Double joint, Point2D.Double point) {
-        for(Rectangle wall : walls) {
+        for(Rectangle wall : rectWalls) {
             if(wall.intersectsLine(joint.x, joint.y, point.x, point.y)) {
                 return true;
             }

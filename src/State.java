@@ -8,7 +8,7 @@ public class State {
     ArrayList<Integer> angles;
     double distance;
 
-    public State(int angle1, int angle2, int angle3) {
+    public State() {
         angles = new ArrayList<>();
 
     }

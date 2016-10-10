@@ -1,19 +1,24 @@
+import com.sun.org.apache.regexp.internal.RE;
+import javafx.scene.shape.Ellipse;
+
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import java.awt.geom.Ellipse2D;
 
 /**
  * Created by kdonahoe on 10/2/16.
  */
 public class RobotArmProblem {
-    static ArrayList<Rectangle> walls = new ArrayList<Rectangle>();
+    static ArrayList<Rectangle> rectWalls = new ArrayList<>();
+    static ArrayList<Ellipse2D> circularWalls = new ArrayList<>();
     static ArrayList<RobotArm> arms = new ArrayList<RobotArm>();
     static GeneralPath robot = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 100);
 
 
     public RobotArmProblem(ArrayList<Rectangle> obsticles, ArrayList<RobotArm> robotArms) {
-        this.walls = obsticles;
+        this.rectWalls = obsticles;
         this.arms = robotArms;
     }
 
@@ -24,7 +29,7 @@ public class RobotArmProblem {
 
 
     public static void main(String[] args) {
-        World robotWorld = new World(walls, arms, robot, 3);
+        World robotWorld = new World(rectWalls, circularWalls, arms, robot, 3);
         GraphicsDrawer drawer = new GraphicsDrawer(robotWorld);
         drawer.setVisible(true);
 
@@ -36,15 +41,15 @@ public class RobotArmProblem {
             e.printStackTrace();
         }
 
-        walls = robotWorld.getWalls();
+        rectWalls = robotWorld.getRectWalls();
         arms = robotWorld.getArms();
         robot = robotWorld.getRobot();
 
-        for(Rectangle wall : walls) {
-            if (robot.intersects(wall)) {
-                robotWorld.setBackground(Color.red);
-            }
-        }
+//        for(Shape wall : walls) {
+//            if (robot.intersects(wall)) {
+//                robotWorld.setBackground(Color.red);
+//            }
+//        }
 
         /* Now that the world has been created, let's start the Probabilistic Road Mapping
             Three steps will be involved for PRM:
