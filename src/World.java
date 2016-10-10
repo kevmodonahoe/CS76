@@ -34,7 +34,7 @@ class World extends JPanel {
 
     // A World is the actual area where all the arms and walls live.
     // An instance of this is instantiated inside of the RobotArmProblem.
-    public World(ArrayList<Rectangle> rectWalls, ArrayList<Ellipse2D> circularWalls, ArrayList<RobotArm> arms, GeneralPath robot, int numJoints) {
+    public World(ArrayList<Rectangle> rectWalls, ArrayList<Ellipse2D> circularWalls, ArrayList<RobotArm> arms, GeneralPath robot, int numJoints, boolean difficult) {
         // The state of the problem is the angles
         goalPath = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 100);
         this.basePoint = new Point2D.Double(400, 400);
@@ -53,26 +53,53 @@ class World extends JPanel {
 
         this.joints = generateJoints(basePoint, startAngles);
         this.goalJoints = generateJoints(basePoint, goalAngles);
-        generateWalls(rectWalls, circularWalls);
+
+        if(difficult) {
+
+            // IF KEEP this approach, need to figure out how to get around jumping over small obsticles
+            generateHardMap(rectWalls, circularWalls);
+        } else {
+            generateWalls(rectWalls);
+        }
+
 
     }
 
     // Generates the walls that act as obsticals for the robot.
-    public void generateWalls(ArrayList<Rectangle> rectWalls, ArrayList<Ellipse2D> circularWalls) {
+    public void generateWalls(ArrayList<Rectangle> rectWalls) {
         Rectangle wall1 = new Rectangle(200, 200, 100, 100);
         Rectangle wall2 = new Rectangle(500, 200, 100, 100);
         Rectangle wall3 = new Rectangle(200, 500, 100, 100);
         Rectangle wall4 = new Rectangle(500, 500, 100, 100);
 
-        Ellipse2D wall5 = new Ellipse2D.Double(400, 300, 50, 50);
-        Ellipse2D wall6 = new Ellipse2D.Double(300, 450, 25, 25);
-
         rectWalls.add(wall1);
         rectWalls.add(wall2);
         rectWalls.add(wall3);
         rectWalls.add(wall4);
+
+    }
+
+    public void generateHardMap(ArrayList<Rectangle> rectWalls, ArrayList<Ellipse2D> circularWalls) {
+        Rectangle wall1 = new Rectangle(300, 460, 40, 40);
+        Rectangle wall2 = new Rectangle(500, 200, 80, 80);
+        Rectangle wall3 = new Rectangle(400, 550, 90, 90);
+        Rectangle wall4 = new Rectangle(200, 550, 50, 50);
+
+        Rectangle wall5 = new Rectangle(200, 220, 50, 50);
+        Rectangle wall6 = new Rectangle(200, 150, 50, 50);
+        Rectangle wall7 = new Rectangle(350, 300, 60, 60);
+
+//        Ellipse2D wall5 = new Ellipse2D.Double(400, 300, 50, 50);
+//        Ellipse2D wall6 = new Ellipse2D.Double(300, 450, 25, 25);
 //        circularWalls.add(wall5);
 //        circularWalls.add(wall6);
+        rectWalls.add(wall1);
+        rectWalls.add(wall2);
+        rectWalls.add(wall3);
+        rectWalls.add(wall4);
+        rectWalls.add(wall5);
+        rectWalls.add(wall6);
+        rectWalls.add(wall7);
     }
 
     // Generates the initial angles to be used for the starting robot position.
@@ -180,8 +207,11 @@ class World extends JPanel {
         }
     }
 
-    public void updateWorldConnectSampleNodes(Graphics g, ArrayList<Point2D.Double> samplePoints) {
+    public void updateWorldConnectSampleNodes(Graphics g, ArrayList<Point2D.Double> samplePoints, int algorithmUsed) {
         Graphics2D g2d = (Graphics2D) g;
+        if(algorithmUsed == 2) {
+            g2d.setPaint(Color.green);
+        }
         robot.moveTo(400, 400);
         for(Point2D.Double point : samplePoints) {
             robot.lineTo(point.x, point.y);
@@ -189,26 +219,6 @@ class World extends JPanel {
         }
         g2d.draw(robot);
     }
-
-    public void updateWorldWithKNeighbors(Graphics g, Point2D.Double joint, ArrayList<Point2D.Double> neighbors) {
-        Graphics2D g2d = (Graphics2D) g;
-        for(Point2D.Double point : neighbors) {
-            robot.moveTo(joint.x, joint.y);
-            robot.lineTo(point.x, point.y);
-        }
-        g2d.draw(robot);
-    }
-
-    public void updateWorldFinalPath(ArrayList<Point2D.Double> finalPath, Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setStroke(new BasicStroke(3));
-        for(int i=0; i<finalPath.size() - 1; i++) {
-            goalPath.moveTo(finalPath.get(i).x, finalPath.get(i).y);
-            goalPath.lineTo(finalPath.get(i + 1).x, finalPath.get(i + 1).y);
-        }
-        g2d.draw(goalPath);
-    }
-
 
     @Override
     public void paintComponent(Graphics g) {
